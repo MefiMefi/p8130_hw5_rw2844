@@ -72,36 +72,62 @@ summary(tab1, title = "Descriptive Statistics: Antibodies Data", labelTranslatio
 rank_sum_norm = 
   igm_df %>%
   filter(Smell == "Normal") %>% 
+  drop_na() %>% 
   select(Antibody_IgM)
 
 rank_sum_alter = 
   igm_df %>% 
-  filter(Smell == "Altered")%>% 
+  filter(Smell == "Altered") %>%
+  drop_na() %>% 
   select(Antibody_IgM)
 
-  qqnorm(rank_sum_norm$Antibody_IgM, main = "Q-Q Plot for Normal group")
-  qqnorm(rank_sum_alter$Antibody_IgM, main = "Q-Q Plot for Altered group")
+qqnorm(rank_sum_norm$Antibody_IgM, main = "Q-Q Plot for Normal group")
+qqnorm(rank_sum_alter$Antibody_IgM, main = "Q-Q Plot for Altered group")
+  
+  
+n_1 = count(rank_sum_norm)
+n_2 = count(rank_sum_alter)
 ```
 
 
-From the descriptive statistic above 
+From the descriptive statistic and the qq-plots above, we can see that the IgM between two groups are skewed and un-paired. So I decided to use non-parametric method ---- Wilcoxon Rank-Sum test.
+
+Let $T_{1}$ be the sum of the ranks of the IgM levels of the Normal group, and let $T_{2}$ be the levels of the Altered group.
+
+And the hypotheses to be tested are:
+
+$H_0:$ the medians of the two groups are equal.
+$H_1:$ the medians of the two groups are not equal.
+
+And the $T_{stat}$:
+$$
+\begin{align}
+T_{stat} = \frac{\left|T_{1}-\frac{n_{1}\left(n_{1}+n_{2}+1\right)}{2}\right|-\frac{1}{2}}{\sqrt{\left(n_{1} n_{2} / 12\right)\left(n_{1}+n_{2}+1\right)}}\\
+\end{align}
+$$
+And if ties:\\
+$$
+\begin{align}
+T_{stat}=\frac{\left|T_{1}-\frac{n_{1}\left(n_{1}+n_{2}+1\right)}{2}\right|-\frac{1}{2}}{\sqrt{\left(n_{1} n_{2} / 12\right)\left[\left(n_{1}+n_{2}+1\right)-\sum_{i=1}^{g} t_{i}\left(t_{i}^{2}-1\right) /\left(n_{1}+n_{2}\right)\left(n_{1}+n_{2}-1\right)\right]}}\\
+\end{align}
+$$
+where $t_i$ refers to the number of observations with the same absolute value in the $i^{th}$ group and $g$ is the number of tied groups.
 
 ```{r wilcoxon_rank_sum}
-rank_sum_norm = 
-  igm_df %>%
-  filter(Smell == "Normal") %>% 
-  select(Antibody_IgM)
-
-rank_sum_alter = 
-  igm_df %>% 
-  filter(Smell == "Altered")%>% 
-  select(Antibody_IgM)
-  
-
 non_para_test =
   wilcox.test(rank_sum_norm$Antibody_IgM, rank_sum_alter$Antibody_IgM,mu = 0) %>% 
   broom::tidy()
 ```
+
+**Decision Rules:**
+
+Under normal-approximation:$n_1~and~n_2\geq10$ , where $n_1 = `r n_1`$, and $n_2 = `r n_2`$.
+
+Reject $H_0$ if $T_{stat}>z_{1-\alpha/2}$.
+
+P-value = \( 2 \times [1-\Phi(T_{stat})] \)
+
+In our situation, \(T_{stat} =`r non_para_test$statistic`>z_{0.975}=`r qnorm(0.975)` \), and p-value is \(`r non_para_test$p.value`\). We reject the null hypothesis and conclude that the medians of the Normal and Altered smell categories are not equal (using a 0.05 significant level). 
 
 
 
