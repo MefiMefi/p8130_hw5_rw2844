@@ -1,0 +1,149 @@
+---
+title: "p8130_hw5_rw2844"
+author: "Renjie Wei"
+date: "11/14/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+library(tidyverse)
+library(viridis)
+library(patchwork)
+library(arsenal)
+library(dplyr)
+knitr::opts_chunk$set(
+  fig.width = 6,
+  fig.asp = 0.6,
+  out.width = "100%"
+)
+theme_set(theme_minimal() + theme(legend.position = "bottom"))
+options(
+  ggplot2.continuous.colour = "viridis",
+  ggplot2.continuous.fill = "viridis"
+)
+scale_colour_discrete = scale_color_viridis_d
+scale_fill_discrete = scale_fill_viridis_d
+set.seed(2844)
+```
+
+# Problem 1
+
+For this problem you will use dataset ‘Antibodies.csv’ from homework 1. In the first assignment
+you generated descriptive statistics and exploratory plots for the Ig-M levels by Normal vs Altered
+groups. The conclusion was that Ig-M distributions were both right skewed with higher levels for
+the Altered group.
+Given the non-normal distributions, now you are asked to use an alternative, non-parametric test
+to assess and comment on the difference in Ig-M levels between the two groups (please ignore
+unanswered and missing values). You can use R to perform the calculations, but make sure you
+state test that you used, the hypotheses, test statistic, p-value and provide interpretation in the
+context of the problem.
+
+
+```{r igm_clean}
+igm_df <- read.csv("./data/Antibodies.csv")
+
+
+igm_df = 
+  igm_df %>% 
+  mutate(
+    AgeCategory = as.factor(AgeCategory),
+    Smell = as.factor(Smell),
+    Gender = as.factor(Gender)
+  )
+
+my_labels <- list(AgeCategory = "Age(yrs)", Antibody_IgM = "IgM", Smell="Smell", Gender="Gender")
+my_controls <- tableby.control(
+               total = F,
+               test=F,
+               numeric.stats = c("meansd", "medianq1q3", "range", "Nmiss2"),
+               cat.stats = c("countpct", "Nmiss2"),
+               stats.labels = list(
+               meansd = "Mean (SD)",
+               medianq1q3 = "Median/IQR",
+               range = "Min - Max",
+               Nmiss2 = "Missing",
+               countpct = "N (%)"))
+
+tab1 <- tableby(Smell ~  Antibody_IgM, data = igm_df, control=my_controls)
+summary(tab1, title = "Descriptive Statistics: Antibodies Data", labelTranslations = my_labels, text=T) %>% 
+  knitr::kable()
+
+
+rank_sum_norm = 
+  igm_df %>%
+  filter(Smell == "Normal") %>% 
+  select(Antibody_IgM)
+
+rank_sum_alter = 
+  igm_df %>% 
+  filter(Smell == "Altered")%>% 
+  select(Antibody_IgM)
+
+  qqnorm(rank_sum_norm$Antibody_IgM, main = "Q-Q Plot for Normal group")
+  qqnorm(rank_sum_alter$Antibody_IgM, main = "Q-Q Plot for Altered group")
+```
+
+
+From the descriptive statistic above 
+
+```{r wilcoxon_rank_sum}
+rank_sum_norm = 
+  igm_df %>%
+  filter(Smell == "Normal") %>% 
+  select(Antibody_IgM)
+
+rank_sum_alter = 
+  igm_df %>% 
+  filter(Smell == "Altered")%>% 
+  select(Antibody_IgM)
+  
+
+non_para_test =
+  wilcox.test(rank_sum_norm$Antibody_IgM, rank_sum_alter$Antibody_IgM,mu = 0) %>% 
+  broom::tidy()
+```
+
+
+
+
+# Problem 2 
+
+Formulate can be handwritten - legibly – scanned and incorporated into the HW PDF.
+Consider the simple linear regression model:
+𝑌𝑖 = 𝛽0 + 𝛽1𝑋𝑖 + 𝜀𝑖 , 𝜀𝑖~𝑁(0, 𝜎2).
+1. Derive the maximum likelihood estimates for 𝛽0 and 𝛽1. (10p)
+Hint: Start by writing the likelihood/log-likelihood function, take the first derivatives and set
+them equal to zero (see course slides). No need to show that the pair of estimates is a global
+point (i.e., no second derivatives are required).
+2. The ‘estimated errors’ of the model are called residuals and denoted by 𝑒𝑖 = 𝑌𝑖 − 𝑌𝑖 ̂ .
+Show that the sum of the residuals is zero: Σ 𝑒𝑖 = 0 𝑛𝑖
+=1 . (5p)
+
+
+# Problem 3
+
+The director of admissions of a small college selected 120 students at random from the new
+freshman class in a study to determine whether a student’s GPA at the end of the freshman year
+(Y) can be predicted from the ACT test score (X). Use data ‘GPA.csv’ to answer the following
+questions:
+You can use R to perform/check the calculations, but you need to show the formulae where
+asked to do so.
+
+1. Generate a scatter plot and test whether a linear association exists between student’s ACT
+score (X) and GPA at the end of the freshman year (Y). Use a level of significance of 0.05.
+Write the hypotheses, test statistics, critical value and decision rule with interpretation in the
+context of the problem. (7.5p)
+
+2. Write the estimated regression line equation in the context of this problem. (2.5p)
+
+3. Obtain a 95% confidence interval for β1. Interpret your confidence interval. Does it include
+zero? Why might the director of admissions be interested in whether the confidence interval
+includes zero? (2.5p)
+
+4. Obtain a 95% interval estimate of the mean freshman GPA for students whose ACT test score
+is 28. Interpret your confidence interval. Hint: Use R function predict(). (2.5p)
+
+5. Anne obtained a score of 28 on the entrance test. Predict her freshman GPA using a 95%
+prediction interval. Interpret your prediction interval. Hint: Use R function predict(). (2.5p)
+6. Is the prediction interval in part 5) wider than the confidence interval in part 4)? Explain.
+(2.5p)                                     
