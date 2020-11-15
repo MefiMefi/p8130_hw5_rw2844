@@ -155,21 +155,77 @@ questions:
 You can use R to perform/check the calculations, but you need to show the formulae where
 asked to do so.
 
-1. Generate a scatter plot and test whether a linear association exists between student’s ACT
+## 1.
+
+Generate a scatter plot and test whether a linear association exists between student’s ACT
 score (X) and GPA at the end of the freshman year (Y). Use a level of significance of 0.05.
 Write the hypotheses, test statistics, critical value and decision rule with interpretation in the
 context of the problem. (7.5p)
+```{r gpa_data}
+gpa_data = read.csv("./data/GPA.csv")
 
-2. Write the estimated regression line equation in the context of this problem. (2.5p)
+plot(gpa_data$ACT, gpa_data$GPA)
 
-3. Obtain a 95% confidence interval for β1. Interpret your confidence interval. Does it include
+reg_gpa = lm(GPA ~ ACT, data = gpa_data)
+
+summary(reg_gpa) 
+
+```
+
+## 2. 
+Write the estimated regression line equation in the context of this problem. (2.5p)
+```{r gpa_reg_plot}
+pre_int <- predict(reg_gpa, interval = "prediction")
+
+plot_data <- cbind(gpa_data, pre_int)
+
+reg_plot <- ggplot(plot_data, aes(x = ACT, y = GPA)) +
+  geom_point() +
+  stat_smooth(method = lm)
+
+reg_plot + 
+  geom_line(aes(y = lwr), color = "red", linetype = "dashed") +
+  geom_line(aes(y = upr), color = "red", linetype = "dashed") +
+  ggtitle("Regression model of ACT test score and freshman year GPA")
+```
+
+
+
+## 3. 
+
+Obtain a 95% confidence interval for β1. Interpret your confidence interval. Does it include
 zero? Why might the director of admissions be interested in whether the confidence interval
 includes zero? (2.5p)
+```{r reg_ci}
+confint(reg_gpa) %>% 
+  knitr::kable()
 
-4. Obtain a 95% interval estimate of the mean freshman GPA for students whose ACT test score
+```
+
+## 4.
+
+Obtain a 95% interval estimate of the mean freshman GPA for students whose ACT test score
 is 28. Interpret your confidence interval. Hint: Use R function predict(). (2.5p)
 
-5. Anne obtained a score of 28 on the entrance test. Predict her freshman GPA using a 95%
+```{r reg_predict}
+
+predict(reg_gpa, data.frame(ACT = 28), interval = "confidence")
+
+```
+
+
+## 5. 
+
+Anne obtained a score of 28 on the entrance test. Predict her freshman GPA using a 95%
 prediction interval. Interpret your prediction interval. Hint: Use R function predict(). (2.5p)
-6. Is the prediction interval in part 5) wider than the confidence interval in part 4)? Explain.
-(2.5p)                                     
+```{r}
+predict(reg_gpa, data.frame(ACT = 28), interval = "prediction")
+```
+
+## 6.
+
+Is the prediction interval in part 5) wider than the confidence interval in part 4)? Explain.
+(2.5p)    
+
+Of course not!
+
